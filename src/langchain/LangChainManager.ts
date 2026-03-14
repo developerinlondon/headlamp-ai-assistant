@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import {
@@ -163,17 +162,6 @@ export default class LangChainManager extends AIManager {
           console.log('AI Assistant: Anthropic config received:', { hasApiKey: !!sanitizedConfig.apiKey, keyPrefix: sanitizedConfig.apiKey?.substring(0, 12), providerId });
           if (!sanitizedConfig.apiKey) {
             throw new Error('An API key or OAuth token is required for Anthropic');
-          }
-          // OAuth tokens (sk-ant-oat*) need the anthropic-beta header
-          if (sanitizedConfig.apiKey.startsWith('sk-ant-oat')) {
-            return new ChatAnthropic({
-              apiKey: sanitizedConfig.apiKey,
-              clientOptions: {
-                defaultHeaders: { 'anthropic-beta': 'oauth-2025-04-20' },
-              },
-              model: sanitizedConfig.model,
-              verbose: true,
-            });
           }
           return new ChatAnthropic({
             apiKey: sanitizedConfig.apiKey,

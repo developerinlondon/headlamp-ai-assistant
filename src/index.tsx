@@ -1,3 +1,4 @@
+import './anthropicOAuthFetch';
 import { Icon } from '@iconify/react';
 import {
   registerAppBarAction,
