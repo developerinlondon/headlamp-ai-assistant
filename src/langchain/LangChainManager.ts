@@ -160,17 +160,23 @@ export default class LangChainManager extends AIManager {
             verbose: true,
           });
         case 'anthropic':
+          console.log('AI Assistant: Anthropic config received:', { hasApiKey: !!sanitizedConfig.apiKey, keyPrefix: sanitizedConfig.apiKey?.substring(0, 12), providerId });
           if (!sanitizedConfig.apiKey) {
             throw new Error('An API key or OAuth token is required for Anthropic');
           }
-          // OAuth tokens (sk-ant-oat*) use Authorization: Bearer header
+          // OAuth tokens (sk-ant-oat*) require Bearer auth + anthropic-beta header
           // Standard API keys (sk-ant-api*) use x-api-key header
           if (sanitizedConfig.apiKey.startsWith('sk-ant-oat')) {
             const oauthToken = sanitizedConfig.apiKey;
             return new ChatAnthropic({
               anthropicApiKey: 'oauth-placeholder',
               createClient: (opts) =>
-                new Anthropic({ ...opts, authToken: oauthToken, apiKey: null }),
+                new Anthropic({
+                  ...opts,
+                  apiKey: null,
+                  authToken: oauthToken,
+                  defaultHeaders: { 'anthropic-beta': 'oauth-2025-04-20' },
+                }),
               model: sanitizedConfig.model,
               verbose: true,
             });
