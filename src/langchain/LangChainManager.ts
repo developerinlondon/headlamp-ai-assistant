@@ -160,13 +160,13 @@ export default class LangChainManager extends AIManager {
           });
         case 'anthropic':
           if (!sanitizedConfig.apiKey) {
-            throw new Error('API key is required for Anthropic');
+            throw new Error('An API key or OAuth token is required for Anthropic');
           }
           // OAuth tokens (sk-ant-oat*) use Authorization: Bearer header
           // Standard API keys (sk-ant-api*) use x-api-key header
           if (sanitizedConfig.apiKey.startsWith('sk-ant-oat')) {
             return new ChatAnthropic({
-              clientOptions: { authToken: sanitizedConfig.apiKey },
+              clientOptions: { authToken: sanitizedConfig.apiKey, apiKey: null },
               model: sanitizedConfig.model,
               verbose: true,
             });
