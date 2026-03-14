@@ -1,3 +1,4 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import {
@@ -165,9 +166,11 @@ export default class LangChainManager extends AIManager {
           // OAuth tokens (sk-ant-oat*) use Authorization: Bearer header
           // Standard API keys (sk-ant-api*) use x-api-key header
           if (sanitizedConfig.apiKey.startsWith('sk-ant-oat')) {
+            const oauthToken = sanitizedConfig.apiKey;
             return new ChatAnthropic({
-              anthropicApiKey: 'oauth-via-authToken',
-              clientOptions: { authToken: sanitizedConfig.apiKey, apiKey: null },
+              anthropicApiKey: 'oauth-placeholder',
+              createClient: (opts) =>
+                new Anthropic({ ...opts, authToken: oauthToken, apiKey: null }),
               model: sanitizedConfig.model,
               verbose: true,
             });
