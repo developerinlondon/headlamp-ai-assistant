@@ -166,6 +166,7 @@ export default class LangChainManager extends AIManager {
           // Standard API keys (sk-ant-api*) use x-api-key header
           if (sanitizedConfig.apiKey.startsWith('sk-ant-oat')) {
             return new ChatAnthropic({
+              anthropicApiKey: 'oauth-via-authToken',
               clientOptions: { authToken: sanitizedConfig.apiKey, apiKey: null },
               model: sanitizedConfig.model,
               verbose: true,
