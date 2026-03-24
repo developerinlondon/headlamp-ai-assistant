@@ -1,4 +1,5 @@
 import { ChatAnthropic } from '@langchain/anthropic';
+import { ChatBedrockConverse } from '@langchain/aws';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import {
   AIMessage,
@@ -127,6 +128,8 @@ export default class LangChainManager extends AIManager {
       baseUrl: sanitizeString(config.baseUrl),
       deploymentName: sanitizeString(config.deploymentName),
       model: sanitizeString(config.model),
+      region: sanitizeString(config.region),
+      bedrockToken: sanitizeString(config.bedrockToken),
     };
 
     try {
@@ -200,6 +203,26 @@ export default class LangChainManager extends AIManager {
           return new ChatGoogleGenerativeAI({
             apiKey: sanitizedConfig.apiKey,
             model: sanitizedConfig.model,
+            verbose: true,
+          });
+        }
+        case 'bedrock': {
+          if (!sanitizedConfig.bedrockToken) {
+            throw new Error('Bedrock Bearer Token is required for AWS Bedrock');
+          }
+          // Decode the ABSK token to extract access key and secret
+          const tokenPayload = atob(sanitizedConfig.bedrockToken.replace(/^ABSK/, ''));
+          const [keyPart, secretPart] = tokenPayload.split(':');
+          if (!keyPart || !secretPart) {
+            throw new Error('Invalid Bedrock Bearer Token format');
+          }
+          return new ChatBedrockConverse({
+            model: sanitizedConfig.model,
+            region: sanitizedConfig.region || 'us-east-1',
+            credentials: {
+              accessKeyId: keyPart,
+              secretAccessKey: secretPart,
+            },
             verbose: true,
           });
         }
