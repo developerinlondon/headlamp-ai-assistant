@@ -1,5 +1,4 @@
 import { ChatAnthropic } from '@langchain/anthropic';
-import { ChatBedrockConverse } from '@langchain/aws';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import {
   AIMessage,
@@ -210,19 +209,22 @@ export default class LangChainManager extends AIManager {
           if (!sanitizedConfig.bedrockToken) {
             throw new Error('Bedrock Bearer Token is required for AWS Bedrock');
           }
-          // Decode the ABSK token to extract access key and secret
-          const tokenPayload = atob(sanitizedConfig.bedrockToken.replace(/^ABSK/, ''));
-          const [keyPart, secretPart] = tokenPayload.split(':');
-          if (!keyPart || !secretPart) {
-            throw new Error('Invalid Bedrock Bearer Token format');
-          }
-          return new ChatBedrockConverse({
+          const region = sanitizedConfig.region || 'us-east-1';
+          const bedrockToken = sanitizedConfig.bedrockToken;
+          // Use Anthropic SDK with Bedrock's API gateway
+          // The ABSK token is passed as a bearer token via custom fetch
+          const bedrockBaseUrl = `https://bedrock-runtime.${region}.amazonaws.com`;
+          const bedrockFetch: typeof globalThis.fetch = (input, init) => {
+            const headers = new Headers(init?.headers);
+            headers.delete('x-api-key');
+            headers.set('authorization', `Bearer ${bedrockToken}`);
+            return globalThis.fetch(input, { ...init, headers });
+          };
+          return new ChatAnthropic({
+            apiKey: bedrockToken,
+            baseURL: bedrockBaseUrl,
+            clientOptions: { fetch: bedrockFetch },
             model: sanitizedConfig.model,
-            region: sanitizedConfig.region || 'us-east-1',
-            credentials: {
-              accessKeyId: keyPart,
-              secretAccessKey: secretPart,
-            },
             verbose: true,
           });
         }
