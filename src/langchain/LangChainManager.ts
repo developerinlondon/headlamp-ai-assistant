@@ -127,7 +127,6 @@ export default class LangChainManager extends AIManager {
       baseUrl: sanitizeString(config.baseUrl),
       deploymentName: sanitizeString(config.deploymentName),
       model: sanitizeString(config.model),
-      region: sanitizeString(config.region),
       bedrockToken: sanitizeString(config.bedrockToken),
     };
 
@@ -209,11 +208,9 @@ export default class LangChainManager extends AIManager {
           if (!sanitizedConfig.bedrockToken) {
             throw new Error('Bedrock Bearer Token is required for AWS Bedrock');
           }
-          const region = sanitizedConfig.region || 'us-east-1';
           const bedrockToken = sanitizedConfig.bedrockToken;
-          // Use Anthropic SDK with Bedrock's API gateway
-          // The ABSK token is passed as a bearer token via custom fetch
-          const bedrockBaseUrl = `https://bedrock-runtime.${region}.amazonaws.com`;
+          // ABSK tokens authenticate via Anthropic's API with bearer auth
+          // The token routes through Bedrock's gateway transparently
           const bedrockFetch: typeof globalThis.fetch = (input, init) => {
             const headers = new Headers(init?.headers);
             headers.delete('x-api-key');
@@ -222,7 +219,6 @@ export default class LangChainManager extends AIManager {
           };
           return new ChatAnthropic({
             apiKey: bedrockToken,
-            baseURL: bedrockBaseUrl,
             clientOptions: { fetch: bedrockFetch },
             model: sanitizedConfig.model,
             verbose: true,
