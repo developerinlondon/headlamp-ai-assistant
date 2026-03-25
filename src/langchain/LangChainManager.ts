@@ -1,4 +1,5 @@
 import { ChatAnthropic } from '@langchain/anthropic';
+import { ChatBedrockProxy } from './BedrockProxyModel';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import {
   AIMessage,
@@ -127,7 +128,7 @@ export default class LangChainManager extends AIManager {
       baseUrl: sanitizeString(config.baseUrl),
       deploymentName: sanitizeString(config.deploymentName),
       model: sanitizeString(config.model),
-      bedrockToken: sanitizeString(config.bedrockToken),
+      proxyUrl: sanitizeString(config.proxyUrl),
     };
 
     try {
@@ -205,23 +206,12 @@ export default class LangChainManager extends AIManager {
           });
         }
         case 'bedrock': {
-          if (!sanitizedConfig.bedrockToken) {
-            throw new Error('Bedrock Bearer Token is required for AWS Bedrock');
+          if (!sanitizedConfig.proxyUrl) {
+            throw new Error('Bedrock Proxy URL is required');
           }
-          const bedrockToken = sanitizedConfig.bedrockToken;
-          // ABSK tokens authenticate via Anthropic's API with bearer auth
-          // The token routes through Bedrock's gateway transparently
-          const bedrockFetch: typeof globalThis.fetch = (input, init) => {
-            const headers = new Headers(init?.headers);
-            headers.delete('x-api-key');
-            headers.set('authorization', `Bearer ${bedrockToken}`);
-            return globalThis.fetch(input, { ...init, headers });
-          };
-          return new ChatAnthropic({
-            apiKey: bedrockToken,
-            clientOptions: { fetch: bedrockFetch },
-            model: sanitizedConfig.model,
-            verbose: true,
+          return new ChatBedrockProxy({
+            proxyUrl: sanitizedConfig.proxyUrl,
+            modelId: sanitizedConfig.model,
           });
         }
         case 'local': {
